@@ -176,7 +176,8 @@ SSE_FLAG=-msse2
 
 DEBUG_FLAGS    = -O0 -g3 $(BITS_FLAG) $(SSE_FLAG)
 DEBUG_DEFS     = -DCOMPILER_OPTIONS="\"$(DEBUG_FLAGS) $(EXTRA_FLAGS)\""
-RELEASE_FLAGS  = -O3 $(BITS_FLAG) $(SSE_FLAG) -funroll-loops -g3
+# Release packages should not embed debug symbols by default.
+RELEASE_FLAGS  = -O3 $(BITS_FLAG) $(SSE_FLAG) -funroll-loops
 RELEASE_DEFS   = -DCOMPILER_OPTIONS="\"$(RELEASE_FLAGS) $(EXTRA_FLAGS)\""
 NOASSERT_FLAGS = -DNDEBUG
 FILE_FLAGS     = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
@@ -286,10 +287,11 @@ repeat: hisat2-repeat
 
 repeat-debug: hisat2-repeat-debug
 
+# Keep Windows release metadata anonymous and ASCII-only.
 DEFS=-fno-strict-aliasing \
      -DHISAT2_VERSION="\"`cat VERSION`\"" \
-     -DBUILD_HOST="\"`hostname`\"" \
-     -DBUILD_TIME="\"`date`\"" \
+     -DBUILD_HOST="\"Windows-UCRT64 release build\"" \
+     -DBUILD_TIME="\"`date -u +%Y-%m-%dT%H:%M:%SZ`\"" \
      -DCOMPILER_VERSION="\"`$(CXX) -v 2>&1 | tail -1`\"" \
      $(FILE_FLAGS) \
      $(PREF_DEF) \
@@ -419,7 +421,7 @@ hisat2-align-l-debug: hisat2.cpp $(SEARCH_CPPS) $(SHARED_CPPS) $(HEADERS) $(SEAR
 hisat2-inspect-s: hisat2_inspect.cpp $(HEADERS) $(SHARED_CPPS)
 	$(CXX) $(RELEASE_FLAGS) \
 	$(RELEASE_DEFS) $(EXTRA_FLAGS) \
-	$(DEFS) -DBOWTIE2 -DHISAT2_INSPECT_MAIN -Wall \
+	$(DEFS) -DBOWTIE2 -DHISAT2_INSPECT_MAIN $(NOASSERT_FLAGS) -Wall \
 	$(INC) -I . \
 	-o $@ $< \
 	$(SHARED_CPPS) \
@@ -428,7 +430,7 @@ hisat2-inspect-s: hisat2_inspect.cpp $(HEADERS) $(SHARED_CPPS)
 hisat2-inspect-l: hisat2_inspect.cpp $(HEADERS) $(SHARED_CPPS)
 	$(CXX) $(RELEASE_FLAGS) \
 	$(RELEASE_DEFS) $(EXTRA_FLAGS) \
-	$(DEFS) -DBOWTIE2 -DBOWTIE_64BIT_INDEX -DHISAT2_INSPECT_MAIN -Wall \
+	$(DEFS) -DBOWTIE2 -DBOWTIE_64BIT_INDEX -DHISAT2_INSPECT_MAIN $(NOASSERT_FLAGS) -Wall \
 	$(INC) -I . \
 	-o $@ $< \
 	$(SHARED_CPPS) \

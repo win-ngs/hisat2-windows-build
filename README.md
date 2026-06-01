@@ -1,18 +1,14 @@
-# HISAT2 for Windows: Unofficial Community Build
+# HISAT2 for Windows: Unofficial Windows Binaries
 
-This repository provides an unofficial Windows build of
-[HISAT2](https://daehwankimlab.github.io/hisat2/) 2.2.2.
+This repository provides unofficial Windows binaries for the
+[HISAT2](https://daehwankimlab.github.io/hisat2/) RNA-seq aligner.
 
-HISAT2 is a fast and sensitive alignment program for mapping next-generation
-sequencing reads to a reference genome or graph-based population index. The
-upstream project is primarily built for Unix-like environments. This repository
-vendors a patched HISAT2 2.2.2 source tree and applies small MSYS2-UCRT64
-compatibility fixes so the command-line tools can be built and used on Windows.
+It packages HISAT2 command-line tools built with MSYS2-UCRT64 and PowerShell
+ports of the upstream launcher scripts.
 
 These builds are not produced, endorsed, or supported by the upstream HISAT2
-project. For HISAT2 itself, see the upstream project:
-
-https://daehwankimlab.github.io/hisat2/
+project. This is **not an official HISAT2 release**.
+Official HISAT2 site: https://daehwankimlab.github.io/hisat2/
 
 ## Downloading HISAT2 for Windows
 
@@ -51,6 +47,11 @@ MSYS2-UCRT64 runtime libraries required by the binaries.
 
 ## How to Use
 
+This Windows build uses the same command-line options as upstream HISAT2. For
+detailed command-line usage, alignment options, index-building options, and
+workflow examples, refer to the official
+[HISAT2 manual](https://daehwankimlab.github.io/hisat2/manual/).
+
 Use the PowerShell wrappers for normal use:
 
 ```powershell
@@ -84,11 +85,6 @@ Inspect an index:
 ```powershell
 .\hisat2-inspect.ps1 -s C:\data\genome
 ```
-
-For detailed command-line usage, alignment options, index-building options,
-and workflow examples, see the official HISAT2 manual:
-
-https://daehwankimlab.github.io/hisat2/manual/
 
 The `.exe` files are the companion binaries used by the wrappers. Do not move
 only one executable to another folder, because the companion binaries and DLLs
@@ -136,25 +132,36 @@ You do not need to build HISAT2 yourself if you only want to use the released
 Windows binary. This section is for maintainers or users who want to recreate
 the build.
 
-Install [MSYS2](https://www.msys2.org/) first. Open an MSYS2 UCRT64 shell and
+Install [MSYS2](https://www.msys2.org/) first. Open an MSYS2-UCRT64 shell and
 install the build tools:
 
 ```sh
 pacman -S --needed \
   base-devel \
-  mingw-w64-ucrt-x86_64-gcc \
-  mingw-w64-ucrt-x86_64-make
+  mingw-w64-ucrt-x86_64-gcc
 ```
 
-Build HISAT2:
+Build the release binaries from a real MSYS2-UCRT64 shell:
 
 ```sh
 cd /c/path/to/hisat2-windows-build/hisat2-2.2.2-patch
-PATH=/ucrt64/bin:/usr/bin:$PATH
-make -j4
+make clean
+make
 ```
 
-The main executables are created in `hisat2-2.2.2-patch/`.
+The release executables are created in `hisat2-2.2.2-patch/`. For the release
+build used by this repository, strip those generated executables after `make`:
+
+```sh
+strip \
+  hisat2-align-s.exe \
+  hisat2-align-l.exe \
+  hisat2-build-s.exe \
+  hisat2-build-l.exe \
+  hisat2-inspect-s.exe \
+  hisat2-inspect-l.exe \
+  hisat2-repeat.exe
+```
 
 ## Validation Performed
 
@@ -172,6 +179,7 @@ UCRT64 make build
 MSYS2-MSYS make build feasibility check
 all HISAT2 companion executables --version
 PowerShell wrappers --version
+--version metadata checked for anonymous build host, ASCII UTC build time, and no -g3 release flag
 paired-end alignment smoke test with Windows C:\... paths
 paths containing spaces
 HISAT2_INDEXES with Windows paths
@@ -183,24 +191,44 @@ dist folder execution without MSYS2 in PATH, using colocated DLLs only
 
 ## MSYS2-UCRT64 Compatibility Patch
 
-The compatibility changes are limited to Windows/MSYS2-UCRT64 build and runtime
-behavior:
+This patch section covers newline handling only. The native HISAT2 executables
+are changed so Windows/MSYS2-UCRT64 text output stays LF-only instead of being
+rewritten to CRLF by the C runtime.
 
-| Area | Change | Reason |
+| File | Change | Reason |
 |---|---|---|
-| Native text output: `filebuf.h` | Changed `OutFileBuf` file opens to `"wb"` for string, C string, and `setFile()` paths | Prevents CRT CRLF translation for wrapper-selected text output files |
-| Native text output: `hisat2_main.cpp` | Sets `hisat2-align-*` stdout and stderr to `_O_BINARY` on Windows | Keeps SAM stdout and diagnostic stderr LF-only |
-| Native text output: `hisat2_build_main.cpp` | Sets `hisat2-build-*` stdout and stderr to `_O_BINARY` on Windows | Keeps build wrapper/native output LF-only |
-| Native text output: `hisat2_repeat_main.cpp` | Sets `hisat2-repeat` stdout and stderr to `_O_BINARY` on Windows | Keeps repeat tool console output LF-only |
-| Native text output: `hisat2_inspect.cpp` | Sets `hisat2-inspect-*` stdout and stderr to `_O_BINARY` on Windows | Keeps inspect output LF-only |
-| Native text output: `hisat2.cpp` | Opens alignment summary and novel splice-site output files with `ios::binary` | Keeps summary and splice-site text files LF-only |
-| Native text output: `repeat_builder.cpp` | Opens `.rep.*.seed`, `.rep.snp`, `.rep.info`, `.rep.haplotype`, and `.rep.fa` files with `ios_base::binary` | Keeps repeat annotation text files LF-only |
-| `hisat2.ps1` | Reimplemented the upstream Perl wrapper behavior in PowerShell | Preserves Windows paths, spaces, wrapper options, passthrough read files, and LF output |
-| `hisat2-build.ps1` | Reimplemented the upstream Python build dispatcher in PowerShell | Selects small/large/debug build binaries without Python |
-| `hisat2-inspect.ps1` | Reimplemented the upstream Python inspect dispatcher in PowerShell | Selects small/large/debug inspect binaries without Python |
+| `filebuf.h` | Changed `OutFileBuf` file opens to `"wb"` for string, C string, and `setFile()` paths | Prevents CRT CRLF translation for wrapper-selected text output files |
+| `hisat2_main.cpp` | Sets `hisat2-align-*` stdout and stderr to `_O_BINARY` on Windows | Keeps SAM stdout and diagnostic stderr LF-only |
+| `hisat2_build_main.cpp` | Sets `hisat2-build-*` stdout and stderr to `_O_BINARY` on Windows | Keeps build wrapper/native output LF-only |
+| `hisat2_repeat_main.cpp` | Sets `hisat2-repeat` stdout and stderr to `_O_BINARY` on Windows | Keeps repeat tool console output LF-only |
+| `hisat2_inspect.cpp` | Sets `hisat2-inspect-*` stdout and stderr to `_O_BINARY` on Windows | Keeps inspect output LF-only |
+| `hisat2.cpp` | Opens alignment summary and novel splice-site output files with `ios::binary` | Keeps summary and splice-site text files LF-only |
+| `repeat_builder.cpp` | Opens `.rep.*.seed`, `.rep.snp`, `.rep.info`, `.rep.haplotype`, and `.rep.fa` files with `ios_base::binary` | Keeps repeat annotation text files LF-only |
 
 The modified source locations include comments explaining the Windows/UCRT64
 change where native code was changed.
+
+## PowerShell Wrapper Scripts
+
+The upstream launcher scripts were ported to PowerShell for this Windows
+release:
+
+| Script | Source behavior | Purpose |
+|---|---|---|
+| `hisat2.ps1` | Reimplements the upstream Perl `hisat2` wrapper | Preserves Windows paths, spaces, wrapper options, passthrough read files, and LF output |
+| `hisat2-build.ps1` | Reimplements the upstream Python `hisat2-build` dispatcher | Selects small/large/debug build binaries without Python |
+| `hisat2-inspect.ps1` | Reimplements the upstream Python `hisat2-inspect` dispatcher | Selects small/large/debug inspect binaries without Python |
+
+## Release Build Metadata Changes
+
+The release build also changes `hisat2-2.2.2-patch/Makefile` so `--version`
+output is suitable for public Windows binaries:
+
+| Area | Change | Reason |
+|---|---|---|
+| Build metadata | Replaced `hostname` with `Windows-UCRT64 release build` and changed `date` to UTC ISO format for `BUILD_TIME` | Avoids embedding a local machine name and avoids locale-dependent mojibake in `--version` |
+| Release flags | Removed `-g3` from `RELEASE_FLAGS` | Keeps release binaries and the reported `Options:` line free of debug-info flags |
+| Release assertions | Added `$(NOASSERT_FLAGS)` to `hisat2-inspect-s/l` release targets | Makes inspect release targets consistent with align/build/repeat release targets that already use `-DNDEBUG` |
 
 ## License
 
