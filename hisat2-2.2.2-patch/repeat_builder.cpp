@@ -3263,7 +3263,8 @@ void RepeatBuilder<TStr>::build(const RepeatParameter& rp)
     rpt_len_str = to_string(rp.min_repeat_len) + "-" + to_string(rp.max_repeat_len);
 
     string seed_filename = filename_ + ".rep." + rpt_len_str + ".seed";
-    ofstream fp(seed_filename.c_str());
+    // Open in binary mode so repeat seed newlines stay LF-only.
+    ofstream fp(seed_filename.c_str(), ios_base::out | ios_base::binary);
 
     swaligner_.init_dyn(rp);
 
@@ -4045,9 +4046,10 @@ void RepeatBuilder<TStr>::saveRepeats(const RepeatParameter &rp)
     string info_fname = filename_ + ".rep.info";
     string hapl_fname = filename_ + ".rep.haplotype";
 
-    ofstream snp_fp(snp_fname.c_str(), mode);
-    ofstream info_fp(info_fname.c_str(), mode);
-    ofstream hapl_fp(hapl_fname.c_str(), mode);
+    // Open in binary mode so repeat annotation newlines stay LF-only.
+    ofstream snp_fp(snp_fname.c_str(), mode | ios_base::binary);
+    ofstream info_fp(info_fname.c_str(), mode | ios_base::binary);
+    ofstream hapl_fp(hapl_fname.c_str(), mode | ios_base::binary);
 
     const string repName = "rep" + to_string(rp.min_repeat_len) + "-" + to_string(rp.max_repeat_len);
     
@@ -4093,7 +4095,8 @@ void RepeatBuilder<TStr>::saveConsensus(const RepeatParameter &rp,
     }
 
     string fa_fname = filename_ + ".rep.fa";
-    ofstream fa_fp(fa_fname.c_str(), mode);
+    // Open in binary mode so repeat FASTA newlines stay LF-only.
+    ofstream fa_fp(fa_fname.c_str(), mode | ios_base::binary);
 
     fa_fp << ">" << repName << endl;
 

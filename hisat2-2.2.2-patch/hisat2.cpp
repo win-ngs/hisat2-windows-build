@@ -4174,7 +4174,8 @@ static void driver(
                            newAlignSummary,
                            hadoopOut);
             if(alignSumFile != "") {
-                ofstream sumfile(alignSumFile.c_str(), ios::out);
+                // Open in binary mode so summary newlines stay LF-only.
+                ofstream sumfile(alignSumFile.c_str(), ios::out | ios::binary);
                 if(sumfile.is_open()) {
                     mssink->finish(sumfile,
                                    repThresh,
@@ -4188,7 +4189,8 @@ static void driver(
 		}
         if(ssdb != NULL) {
             if(novelSpliceSiteOutfile != "") {
-                ofstream ssdb_file(novelSpliceSiteOutfile.c_str(), ios::out);
+                // Open in binary mode so splice-site newlines stay LF-only.
+                ofstream ssdb_file(novelSpliceSiteOutfile.c_str(), ios::out | ios::binary);
                 if(ssdb_file.is_open()) {
                     ssdb->print(ssdb_file);
                     ssdb_file.close();

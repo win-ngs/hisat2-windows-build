@@ -531,7 +531,8 @@ public:
 	OutFileBuf(const std::string& out, bool binary = false) :
 		name_(out.c_str()), cur_(0), closed_(false)
 	{
-		out_ = fopen(out.c_str(), binary ? "wb" : "w");
+		// Open in binary mode so callers' '\n' bytes are never expanded.
+		out_ = fopen(out.c_str(), "wb");
 		if(out_ == NULL) {
 			std::cerr << "Error: Could not open alignment output file " << out.c_str() << std::endl;
 			throw 1;
@@ -547,7 +548,8 @@ public:
 		name_(out), cur_(0), closed_(false)
 	{
 		assert(out != NULL);
-		out_ = fopen(out, binary ? "wb" : "w");
+		// Open in binary mode so callers' '\n' bytes are never expanded.
+		out_ = fopen(out, "wb");
 		if(out_ == NULL) {
 			std::cerr << "Error: Could not open alignment output file " << out << std::endl;
 			throw 1;
@@ -571,7 +573,8 @@ public:
 	 */
 	void setFile(const char *out, bool binary = false) {
 		assert(out != NULL);
-		out_ = fopen(out, binary ? "wb" : "w");
+		// Open in binary mode so callers' '\n' bytes are never expanded.
+		out_ = fopen(out, "wb");
 		if(out_ == NULL) {
 			std::cerr << "Error: Could not open alignment output file " << out << std::endl;
 			throw 1;

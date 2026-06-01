@@ -21,6 +21,11 @@
 #include <iostream>
 #include <getopt.h>
 #include <stdexcept>
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#include <stdio.h>
+#endif
 
 #include "assert_helpers.h"
 #include "endian_swap.h"
@@ -724,6 +729,11 @@ static void driver(
  */
 int main(int argc, char **argv) {
 	try {
+#ifdef _WIN32
+		// Disable CRT newline translation so stdout/stderr stay LF-only.
+		_setmode(_fileno(stdout), _O_BINARY);
+		_setmode(_fileno(stderr), _O_BINARY);
+#endif
 		string ebwtFile;  // read serialized Ebwt from this file
 		string query;   // read query string(s) from this file
 		EList<string> queries;
@@ -788,4 +798,3 @@ int main(int argc, char **argv) {
 		return e;
 	}
 }
-
