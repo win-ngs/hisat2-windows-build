@@ -1,0 +1,22 @@
+DLL: libgcc_s_seh-1.dll
+MSYS2 package: mingw-w64-ucrt-x86_64-gcc-libs
+Package version: 16.1.0-2
+Upstream: https://gcc.gnu.org
+License expression from MSYS2 package metadata:
+  GPL-3.0-or-later WITH GCC-exception-3.1 AND LGPL-2.1-or-later
+
+Package license notice from /ucrt64/share/licenses/gcc-libs/README:
+
+The libgcc, libstdc++, libgomp and libatomic libraries are covered by
+GPL-3.0-or-later with GCC-exception-3.1. The libquadmath library is covered
+by LGPL-2.1-or-later. The package as a whole can be redistributed under GPL-3.0-or-later.
+
+Relevant bundled license files from MSYS2:
+  /ucrt64/share/licenses/gcc-libs/COPYING3
+  /ucrt64/share/licenses/gcc-libs/COPYING.RUNTIME
+  /ucrt64/share/licenses/gcc-libs/COPYING.LIB
+
+Online license texts:
+  GNU General Public License version 3: https://www.gnu.org/licenses/gpl-3.0.html
+  GCC Runtime Library Exception 3.1: https://www.gnu.org/licenses/gcc-exception-3.1.html
+  GNU Lesser General Public License version 2.1: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html

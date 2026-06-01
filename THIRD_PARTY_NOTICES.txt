@@ -1,0 +1,61 @@
+Third-Party Notices for hisat2-2.2.2-patch-windows-ucrt64
+=========================================================
+
+This file summarizes third-party components included in the Windows release
+ZIP for this repository.
+
+This is an informational notice file, not legal advice. Each third-party
+component remains under its own license terms.
+
+
+Packaged runtime files
+----------------------
+
+The release ZIP includes HISAT2 executables, PowerShell wrapper scripts, and
+runtime DLLs copied from an MSYS2-UCRT64 installation. Package ownership was
+checked with `pacman -Qo`, and package metadata was checked with `pacman -Qi`.
+
+HISAT2 executables and wrappers
+  Built from HISAT2 2.2.2 source with the Windows/MSYS2-UCRT64 compatibility
+  patch in this repository.
+
+Runtime DLL package summary:
+
+  DLL                              MSYS2 package                         Version                    License
+  libgcc_s_seh-1.dll               mingw-w64-ucrt-x86_64-gcc-libs       16.1.0-2                   spdx:GPL-3.0-or-later WITH GCC-exception-3.1 AND LGPL-2.1-or-later
+  libstdc++-6.dll                  mingw-w64-ucrt-x86_64-gcc-libs       16.1.0-2                   spdx:GPL-3.0-or-later WITH GCC-exception-3.1 AND LGPL-2.1-or-later
+  libwinpthread-1.dll              mingw-w64-ucrt-x86_64-libwinpthread  14.0.0.r37.g2bfe61fba-1    spdx:MIT AND BSD-3-Clause-Clear
+
+The `LICENSES/` directory contains DLL-level license metadata for the runtime
+DLLs included in this ZIP.
+
+
+HISAT2
+------
+
+Upstream project:
+  https://daehwankimlab.github.io/hisat2/
+
+Upstream source:
+  https://github.com/DaehwanKimLab/hisat2
+
+License:
+  GPL-3.0
+
+The upstream HISAT2 license text is included in:
+
+  hisat2-2.2.2-patch/LICENSE
+
+and copied into the release ZIP as:
+
+  LICENSE.md
+
+
+MSYS2
+-----
+
+The runtime DLLs listed above were copied from an MSYS2-UCRT64 installation.
+MSYS2 package metadata and license files were used to prepare this notice.
+
+MSYS2 project:
+  https://www.msys2.org/
