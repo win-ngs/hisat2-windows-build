@@ -20,16 +20,19 @@ this repository.
 Download the latest release archive, for example:
 
 ```text
-hisat2-2.2.2-patch-windows-ucrt64.zip
+hisat2-2.2.2-windows-ucrt64.zip
 ```
 
 After extracting the archive, you should see:
 
 ```text
-hisat2-2.2.2-patch-windows-ucrt64/
+hisat2-2.2.2-windows-ucrt64/
   hisat2.ps1
   hisat2-build.ps1
   hisat2-inspect.ps1
+  hisat2.cmd
+  hisat2-build.cmd
+  hisat2-inspect.cmd
   hisat2-align-s.exe
   hisat2-align-l.exe
   hisat2-build-s.exe
@@ -54,28 +57,21 @@ detailed command-line usage, alignment options, index-building options, and
 workflow examples, refer to the official
 [HISAT2 manual](https://daehwankimlab.github.io/hisat2/manual/).
 
-Use the PowerShell wrappers for normal use:
+Use the command launchers for normal use:
 
 ```powershell
-cd C:\Users\you\Downloads\hisat2-2.2.2-patch-windows-ucrt64
-.\hisat2.ps1 --version
-.\hisat2-build.ps1 --version
-.\hisat2-inspect.ps1 --version
-```
-
-If your execution policy blocks local scripts, run them through PowerShell with
-an explicit bypass for that invocation:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\hisat2.ps1 --version
+cd C:\Users\you\Downloads\hisat2-2.2.2-windows-ucrt64
+.\hisat2.cmd --version
+.\hisat2-build.cmd --version
+.\hisat2-inspect.cmd --version
 ```
 
 Build an index and align paired-end FASTQ files:
 
 ```powershell
-.\hisat2-build.ps1 C:\data\genome.fa C:\data\genome
+.\hisat2-build.cmd C:\data\genome.fa C:\data\genome
 
-.\hisat2.ps1 `
+.\hisat2.cmd `
   -x C:\data\genome `
   -1 C:\data\reads_1.fq `
   -2 C:\data\reads_2.fq `
@@ -85,7 +81,7 @@ Build an index and align paired-end FASTQ files:
 Inspect an index:
 
 ```powershell
-.\hisat2-inspect.ps1 -s C:\data\genome
+.\hisat2-inspect.cmd -s C:\data\genome
 ```
 
 The `.exe` files are the companion binaries used by the wrappers. Do not move
@@ -107,6 +103,16 @@ prefer specifying `-S output.sam` explicitly. When passthrough is active and
 `-S` is omitted, the wrapper writes SAM text to raw console stdout to preserve
 LF line endings.
 
+> **`%` in `--un-conc` / `--al-conc` patterns via the `.cmd` launchers:** When
+> you call the `.cmd` launchers (e.g. `hisat2.cmd`), a literal `%` in an
+> argument is removed by `cmd.exe` argument expansion, so a pattern such as
+> `--un-conc out%.fq` reaches the tool as `out.fq` and the `%` mate-number
+> placeholder is ignored. The wrapper still produces valid, separate mate files
+> by inserting `.1.` / `.2.` before the extension (`out.1.fq` / `out.2.fq`), so
+> output is not lost — only your explicit `%` position is. If you need the `%`
+> placeholder honored, invoke the script directly instead of the launcher:
+> `powershell -ExecutionPolicy Bypass -File hisat2.ps1 ... --un-conc out%.fq`.
+
 ## Compressed Reads (.gz / .bz2)
 
 Compressed read inputs and compressed passthrough outputs are handled without
@@ -118,7 +124,7 @@ relying on an external `gzip` being on `PATH`:
   `bzip2.exe` and `libbz2-1.dll` next to the wrappers. The wrapper invokes the
   bundled `bzip2.exe` by full path, falling back to a `bzip2` on `PATH` only if
   the bundled copy is absent. See `THIRD_PARTY_NOTICES.txt` and
-  `LICENSES/bzip2.txt` for its license.
+  `LICENSES/bzip2.exe/LICENSE.txt` for its license.
 
 > **PowerShell 5.1 note for gzip:** Windows PowerShell 5.1 (.NET Framework)
 > decompresses only the first member of a multi-member / concatenated / bgzip
@@ -236,7 +242,9 @@ change where native code was changed.
 ## PowerShell Wrapper Scripts
 
 The upstream launcher scripts were ported to PowerShell for this Windows
-release:
+release. The release archive also includes `.cmd` launchers with the same base
+names, so users can run `hisat2`, `hisat2-build`, and `hisat2-inspect` when the
+release folder is on `PATH`.
 
 | Script | Source behavior | Purpose |
 |---|---|---|

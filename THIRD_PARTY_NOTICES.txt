@@ -1,4 +1,4 @@
-Third-Party Notices for hisat2-2.2.2-patch-windows-ucrt64
+Third-Party Notices for hisat2-2.2.2-windows-ucrt64
 =========================================================
 
 This file summarizes third-party components included in the Windows release
@@ -26,8 +26,8 @@ Bundled binary package summary:
   libgcc_s_seh-1.dll   mingw-w64-ucrt-x86_64-gcc-libs       16.1.0-2                 spdx:GPL-3.0-or-later WITH GCC-exception-3.1 AND LGPL-2.1-or-later
   libstdc++-6.dll      mingw-w64-ucrt-x86_64-gcc-libs       16.1.0-2                 spdx:GPL-3.0-or-later WITH GCC-exception-3.1 AND LGPL-2.1-or-later
   libwinpthread-1.dll  mingw-w64-ucrt-x86_64-libwinpthread  14.0.0.r37.g2bfe61fba-1  spdx:MIT AND BSD-3-Clause-Clear
-  bzip2.exe            mingw-w64-ucrt-x86_64-bzip2          1.0.8-3                  custom (bzip2 license, BSD-style; see LICENSES/bzip2.txt)
-  libbz2-1.dll         mingw-w64-ucrt-x86_64-bzip2          1.0.8-3                  custom (bzip2 license, BSD-style; see LICENSES/bzip2.txt)
+  bzip2.exe            mingw-w64-ucrt-x86_64-bzip2          1.0.8-3                  custom (bzip2 license, BSD-style; see LICENSES/bzip2.exe/LICENSE.txt)
+  libbz2-1.dll         mingw-w64-ucrt-x86_64-bzip2          1.0.8-3                  custom (bzip2 license, BSD-style; see LICENSES/libbz2-1.dll/LICENSE.txt)
 
 The `LICENSES/` directory contains license metadata and texts for the runtime
 DLLs and the bundled bzip2 tool included in this ZIP.
@@ -71,7 +71,7 @@ MSYS2 package:
 
 License:
   bzip2 license (BSD-style), Copyright (C) 1996-2019 Julian R Seward.
-  Full text in: LICENSES/bzip2.txt
+  Full text in: LICENSES/bzip2.exe/LICENSE.txt
 
 
 MSYS2
