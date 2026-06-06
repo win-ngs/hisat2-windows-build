@@ -8,6 +8,7 @@ ports of the upstream launcher scripts.
 
 These builds are not produced, endorsed, or supported by the upstream HISAT2
 project. This is **not an official HISAT2 release**.
+
 Official HISAT2 site: https://daehwankimlab.github.io/hisat2/
 
 ## Downloading HISAT2 for Windows
@@ -36,6 +37,7 @@ hisat2-2.2.2-patch-windows-ucrt64/
   hisat2-inspect-s.exe
   hisat2-inspect-l.exe
   hisat2-repeat.exe
+  bzip2.exe
   *.dll
   LICENSE.md
   THIRD_PARTY_NOTICES.txt
@@ -104,6 +106,26 @@ For passthrough read-output options such as `--un`, `--al`, and `--al-conc`,
 prefer specifying `-S output.sam` explicitly. When passthrough is active and
 `-S` is omitted, the wrapper writes SAM text to raw console stdout to preserve
 LF line endings.
+
+## Compressed Reads (.gz / .bz2)
+
+Compressed read inputs and compressed passthrough outputs are handled without
+relying on an external `gzip` being on `PATH`:
+
+- **gzip (`.gz`)** is handled in-process by the wrapper through the .NET
+  runtime, so no external tool is required.
+- **bzip2 (`.bz2`)** has no in-runtime decoder, so the release bundles
+  `bzip2.exe` and `libbz2-1.dll` next to the wrappers. The wrapper invokes the
+  bundled `bzip2.exe` by full path, falling back to a `bzip2` on `PATH` only if
+  the bundled copy is absent. See `THIRD_PARTY_NOTICES.txt` and
+  `LICENSES/bzip2.txt` for its license.
+
+> **PowerShell 5.1 note for gzip:** Windows PowerShell 5.1 (.NET Framework)
+> decompresses only the first member of a multi-member / concatenated / bgzip
+> `.gz` file. The wrapper detects this and fails with a clear error instead of
+> silently dropping reads. Use **PowerShell 7+** (which decompresses all
+> members) for such inputs, or decompress the file first. Ordinary single-stream
+> `.gz` files produced by `gzip file.fq` work on both PowerShell 5.1 and 7.
 
 ## Source Tree
 
@@ -187,6 +209,9 @@ passthrough read-output options: --un, --al, --un-gz, --al-conc
 --log-file in passthrough and non-passthrough paths
 LF-only output checks for SAM, summary, logs, and passthrough reads
 dist folder execution without MSYS2 in PATH, using colocated DLLs only
+.gz input/output via in-process .NET on PowerShell 5.1 and 7 (no external gzip)
+.bz2 input/output via bundled bzip2.exe with no bzip2 on PATH
+multi-member gzip: full decode on PowerShell 7, loud error (no silent loss) on 5.1
 ```
 
 ## MSYS2-UCRT64 Compatibility Patch

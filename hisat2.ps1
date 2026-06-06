@@ -27,6 +27,18 @@ $TempDir = [System.IO.Path]::GetTempPath()
 $Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 $RemovedArgMarker = '__HISAT2_PS1_REMOVED_ARG_6B7041F5E01C4D40__'
 
+# gzip (.gz) is handled in-process via .NET GzipStream (no external tool).
+# bzip2 (.bz2) has no built-in .NET decoder; prefer a bundled bzip2.exe next to
+# the wrapper/exe, falling back to whatever is on PATH.
+$Bzip2Exe = 'bzip2'
+foreach ($Bzip2Dir in @($AppDir, $ScriptDir)) {
+    $Bzip2Candidate = Join-Path -Path $Bzip2Dir -ChildPath 'bzip2.exe'
+    if (Test-Path -LiteralPath $Bzip2Candidate -PathType Leaf) {
+        $Bzip2Exe = $Bzip2Candidate
+        break
+    }
+}
+
 function Write-StderrText {
     param([string]$Text)
     if ($script:LogFileName) {
@@ -217,6 +229,54 @@ function Copy-ProcessStdoutToStream {
     }
 }
 
+function Copy-GzipFileToStream {
+    param(
+        [string]$InputFile,
+        [System.IO.Stream]$OutputStream
+    )
+    # Decompress every gzip member. PowerShell 7 (.NET 5+) GzipStream spans all
+    # members in a single CopyTo. Windows PowerShell 5.1 (.NET Framework 4.x)
+    # decodes only the FIRST member and over-reads the base stream, so it cannot
+    # be looped reliably. To avoid silently dropping reads from multi-member /
+    # concatenated / bgzip .gz files on 5.1 we verify, after decompression, that
+    # the bytes written match the gzip ISIZE trailer; a mismatch means more than
+    # one member was present and we fail loudly.
+    $CanVerify = (-not $IsCoreCLR) -and $OutputStream.CanSeek
+    $FileStream = [System.IO.File]::OpenRead($InputFile)
+    try {
+        $StartPos = if ($CanVerify) { $OutputStream.Position } else { 0 }
+        $MemberCount = 0
+        while ($FileStream.Position -lt $FileStream.Length) {
+            try {
+                $Gzip = [System.IO.Compression.GzipStream]::new($FileStream, [System.IO.Compression.CompressionMode]::Decompress, $true)
+                try {
+                    $Gzip.CopyTo($OutputStream)
+                } finally {
+                    $Gzip.Dispose()
+                }
+            } catch {
+                if ($MemberCount -ge 1) {
+                    Fail("Multi-member/concatenated gzip is not supported on this PowerShell: '$InputFile'. Use PowerShell 7+ or decompress the file first.`n")
+                }
+                throw
+            }
+            $MemberCount++
+        }
+        if ($CanVerify -and $FileStream.Length -ge 4) {
+            $Written = [uint32](($OutputStream.Position - $StartPos) -band 0xFFFFFFFF)
+            $Trailer = New-Object byte[] 4
+            [void]$FileStream.Seek(-4, [System.IO.SeekOrigin]::End)
+            [void]$FileStream.Read($Trailer, 0, 4)
+            $ISize = [System.BitConverter]::ToUInt32($Trailer, 0)
+            if ($Written -ne $ISize) {
+                Fail("Multi-member/concatenated gzip is not supported on this PowerShell: '$InputFile'. Use PowerShell 7+ or decompress the file first.`n")
+            }
+        }
+    } finally {
+        $FileStream.Dispose()
+    }
+}
+
 function Copy-ReadFileToStream {
     param(
         [string]$InputFile,
@@ -225,9 +285,9 @@ function Copy-ReadFileToStream {
     if ($InputFile -eq '-') {
         Fail("Cannot combine stdin with temporary read wrapping on Windows.`n")
     } elseif ($InputFile -match '\.gz$') {
-        Copy-ProcessStdoutToStream 'gzip' $InputFile $OutputStream
+        Copy-GzipFileToStream $InputFile $OutputStream
     } elseif ($InputFile -match '\.bz2$') {
-        Copy-ProcessStdoutToStream 'bzip2' $InputFile $OutputStream
+        Copy-ProcessStdoutToStream $script:Bzip2Exe $InputFile $OutputStream
     } else {
         $InputStream = [System.IO.File]::OpenRead($InputFile)
         try {
@@ -287,7 +347,7 @@ function Open-ReadTextReader {
     } elseif ($Path -match '\.bz2$') {
         $FileStream.Dispose()
         $Psi = [System.Diagnostics.ProcessStartInfo]::new()
-        $Psi.FileName = 'bzip2'
+        $Psi.FileName = $script:Bzip2Exe
         $Psi.UseShellExecute = $false
         $Psi.RedirectStandardOutput = $true
         $Psi.RedirectStandardError = $true
@@ -500,9 +560,30 @@ function Compress-PlainTextFile {
         [string]$OutputPath,
         [string]$Compression
     )
-    $Program = if ($Compression -eq 'gzip') { 'gzip' } else { 'bzip2' }
+    if ($Compression -eq 'gzip') {
+        # In-process gzip via .NET (no external tool).
+        $InputStream = [System.IO.File]::OpenRead($InputPath)
+        try {
+            $OutputStream = [System.IO.File]::Open($OutputPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
+            try {
+                $Gzip = [System.IO.Compression.GzipStream]::new($OutputStream, [System.IO.Compression.CompressionMode]::Compress)
+                try {
+                    $InputStream.CopyTo($Gzip)
+                } finally {
+                    $Gzip.Dispose()
+                }
+            } finally {
+                $OutputStream.Dispose()
+            }
+        } finally {
+            $InputStream.Dispose()
+        }
+        return
+    }
+
+    # bzip2 has no built-in .NET encoder; shell out to the (bundled) bzip2.exe.
     $Psi = [System.Diagnostics.ProcessStartInfo]::new()
-    $Psi.FileName = $Program
+    $Psi.FileName = $script:Bzip2Exe
     $Psi.UseShellExecute = $false
     $Psi.RedirectStandardOutput = $true
     $Psi.RedirectStandardError = $true
@@ -520,7 +601,7 @@ function Compress-PlainTextFile {
     $ErrText = $Proc.StandardError.ReadToEnd()
     $Proc.WaitForExit()
     if ($Proc.ExitCode -ne 0) {
-        Fail("$Program failed while writing '$OutputPath': $ErrText`n")
+        Fail("$script:Bzip2Exe failed while writing '$OutputPath': $ErrText`n")
     }
 }
 
